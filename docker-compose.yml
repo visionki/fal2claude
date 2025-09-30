@@ -1,15 +1,29 @@
+version: '3.9'
+
 services:
-  fal-openai-proxy:
-    build: . # 构建当前目录下的 Dockerfile
-    container_name: fal_openai_proxy
+  fal2claude:
+    build: .
+    container_name: fal2claude
     ports:
-      - "13000:3000" # 将主机的 3000 端口映射到容器的 3000 端口
+      - "8080:8080"
     environment:
-      # 在这里设置你的 Fal AI API Key
-      # 或者，为了安全起见，你可以创建一个 .env 文件，并在其中定义 FAL_KEY
-      # 然后取消下面行的注释:
-      # env_file:
-      #  - .env
-      FAL_KEY: "" # !! 重要：替换为你的真实 Fal AI Key !!
-      PORT: 3000 # 确保容器内的端口与 Dockerfile 和 server.js 中一致
-    restart: unless-stopped # 服务失败时自动重启，除非手动停止
+      # API Key (可选，推荐从请求头 x-api-key 传入)
+      - FAL_KEY=${FAL_KEY:-}
+
+      # 服务端口
+      - PORT=8080
+
+      # 模型映射配置 (JSON 格式)
+      # 用途: 将请求的 Claude 模型名映射到实际调用的 Fal 模型
+      # 格式: {"请求的模型名": "实际调用的fal模型名"}
+      # 示例: 请求 claude-3-5-sonnet-20241022 → 实际调用 google/gemini-2.5-flash
+      #       请求 claude-3-haiku-20240307 → 实际调用 google/gemini-2.5-flash-lite
+      # 默认值提供了常用的 Claude 模型映射
+      - MODEL_MAPPING=${MODEL_MAPPING:-{"claude-sonnet-4-5-20250929":"anthropic/claude-3.7-sonnet","claude-opus-4-1-20250805":"anthropic/claude-3.7-sonnet","claude-3-5-haiku-20241022":"google/gemini-2.5-flash"}}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

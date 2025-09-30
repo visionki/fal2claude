@@ -1,24 +1,18 @@
-# 使用官方 Node.js 18 LTS 镜像作为基础
-FROM node:18-alpine
+FROM node:20-alpine
 
-# 设置工作目录
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# 复制 package.json 和 package-lock.json (如果存在)
+# 复制依赖文件
 COPY package*.json ./
 
-# 安装项目依赖
-RUN npm install
+# 安装依赖
+RUN npm ci --production
 
-# 复制应用源代码
-COPY . .
+# 复制源代码
+COPY index.js ./
 
-# 暴露应用程序使用的端口
-EXPOSE 3000
+# 暴露端口
+EXPOSE 8080
 
-# 定义环境变量 (可以在 docker-compose 中覆盖)
-ENV PORT=3000
-# FAL_KEY 应该在运行时通过 docker-compose 传入，而不是硬编码在这里
-
-# 运行应用程序的命令
-CMD [ "npm", "start" ]
+# 启动应用
+CMD ["node", "index.js"]
